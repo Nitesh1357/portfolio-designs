@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Simple To‑Do App</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent:#6ee7b7;--danger:#ff7b7b}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial}
+    body{display:flex;align-items:center;justify-content:center;padding:32px;background:linear-gradient(180deg,#081226 0%, #071226 60%);color:#e6eef6}
+    .app{width:100%;max-width:680px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:20px;box-shadow:0 8px 30px rgba(2,6,23,0.6)}
+    h1{margin:0 0 12px;font-size:20px;letter-spacing:-0.3px}
+    .controls{display:flex;gap:8px;margin-bottom:12px}
+    input[type=text]{flex:1;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);background:transparent;color:inherit;font-size:15px}
+    button{padding:10px 12px;border-radius:8px;border:0;background:var(--accent);color:#042018;font-weight:600;cursor:pointer}
+    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);font-weight:600}
+    .list{margin-top:8px}
+    .item{display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:8px;margin-bottom:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.01)}
+    .left{display:flex;align-items:center;gap:10px;flex:1}
+    .checkbox{width:18px;height:18px;border-radius:4px;border:1px solid rgba(255,255,255,0.06);display:inline-grid;place-items:center;cursor:pointer}
+    .checkbox.checked{background:rgba(255,255,255,0.06)}
+    .label{font-size:15px}
+    .label.done{opacity:0.6;text-decoration:line-through}
+    .actions{display:flex;gap:8px}
+    .small{font-size:13px;padding:8px 10px}
+    .filters{display:flex;gap:8px;margin-top:12px;align-items:center}
+    .count{color:var(--muted);font-size:13px}
+    @media (max-width:420px){.controls{flex-direction:column}button{width:100%}}
+  </style>
+</head>
+<body>
+  <main class="app" role="main">
+    <h1>Simple To‑Do</h1>
+    <p class="count" id="items-count">0 items</p>
+
+    <form id="add-form" class="controls" aria-label="Add new todo">
+      <input id="new-todo" type="text" placeholder="What do you want to do?" autocomplete="off" aria-label="New todo" />
+      <button id="add-btn" type="submit">Add</button>
+      <button id="clear-completed" type="button" class="ghost">Clear completed</button>
+    </form>
+
+    <section class="filters" aria-label="Filters">
+      <div>
+        <label for="filter">Show:</label>
+        <select id="filter" aria-label="Filter todos">
+          <option value="all">All</option>
+          <option value="active">Active</option>
+          <option value="completed">Completed</option>
+        </select>
+      </div>
+      <div style="margin-left:auto">
+        <button id="export" type="button" class="ghost small">Export</button>
+        <button id="import" type="button" class="ghost small">Import</button>
+        <input id="import-file" type="file" accept="application/json" style="display:none" />
+      </div>
+    </section>
+
+    <div id="list" class="list" aria-live="polite"></div>
+
+    <footer style="margin-top:14px;color:var(--muted);font-size:13px">Tip: press <kbd>Enter</kbd> to add, click a task to toggle done.</footer>
+  </main>
+
+  <script>
+    // Simple todo app with localStorage persistence
+    const SELECTORS = {
+      form: '#add-form',
+      input: '#new-todo',
+      list: '#list',
+      filter: '#filter',
+      count: '#items-count',
+      clearCompleted: '#clear-completed',
+      export: '#export',
+      importBtn: '#import',
+      importFile: '#import-file'
+    }
+
+    const STORAGE_KEY = 'simple_todo_v1'
+
+    let todos = [] // {id, text, done, created}
+    const el = selector => document.querySelector(selector)
+
+    // load
+    function load() {
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY)
+        todos = raw ? JSON.parse(raw) : []
+      }catch(e){ todos = [] }
+    }
+
+    // save
+    function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(todos)) }
+
+    // render
+    function render(){
+      const list = el(SELECTORS.list)
+      list.innerHTML = ''
+      const filter = el(SELECTORS.filter).value
+      const visible = todos.filter(t => filter === 'all' ? true : filter === 'active' ? !t.done : t.done)
+
+      if(visible.length === 0){
+        const empty = document.createElement('div')
+        empty.className = 'item'
+        empty.textContent = 'No tasks — add one above.'
+        list.appendChild(empty)
+      }
+
+      visible.forEach(todo => {
+        const item = document.createElement('div')
+        item.className = 'item'
+        item.setAttribute('data-id', todo.id)
+
+        const left = document.createElement('div')
+        left.className = 'left'
+
+        const cb = document.createElement('button')
+        cb.className = 'checkbox' + (todo.done ? ' checked' : '')
+        cb.setAttribute('aria-label', todo.done ? 'Mark as active' : 'Mark as completed')
+        cb.addEventListener('click', e => toggleDone(todo.id))
+
+        const label = document.createElement('div')
+        label.className = 'label' + (todo.done ? ' done' : '')
+        label.textContent = todo.text
+        label.tabIndex = 0
+        label.addEventListener('click', () => toggleDone(todo.id))
+        label.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' ') toggleDone(todo.id) })
+
+        left.appendChild(cb)
+        left.appendChild(label)
+
+        const actions = document.createElement('div')
+        actions.className = 'actions'
+
+        const del = document.createElement('button')
+        del.className = 'ghost'
+        del.textContent = 'Delete'
+        del.addEventListener('click', () => removeTodo(todo.id))
+
+        actions.appendChild(del)
+
+        item.appendChild(left)
+        item.appendChild(actions)
+        list.appendChild(item)
+      })
+
+      updateCount()
+    }
+
+    function updateCount(){
+      const countEl = el(SELECTORS.count)
+      const remaining = todos.filter(t => !t.done).length
+      countEl.textContent = `${remaining} item${remaining !== 1 ? 's' : ''} remaining` 
+    }
+
+    function addTodo(text){
+      if(!text || !text.trim()) return
+      const todo = { id: Date.now().toString(), text: text.trim(), done: false, created: new Date().toISOString() }
+      todos.unshift(todo)
+      save(); render()
+    }
+
+    function toggleDone(id){
+      todos = todos.map(t => t.id === id ? {...t, done: !t.done} : t)
+      save(); render()
+    }
+
+    function removeTodo(id){
+      todos = todos.filter(t => t.id !== id)
+      save(); render()
+    }
+
+    function clearCompleted(){
+      todos = todos.filter(t => !t.done)
+      save(); render()
+    }
+
+    // export/import
+    function exportTodos(){
+      const blob = new Blob([JSON.stringify(todos, null, 2)], {type: 'application/json'})
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url; a.download = 'todos.json'
+      document.body.appendChild(a); a.click(); a.remove()
+      URL.revokeObjectURL(url)
+    }
+
+    function importTodos(file){
+      if(!file) return
+      const reader = new FileReader()
+      reader.onload = e => {
+        try{
+          const incoming = JSON.parse(e.target.result)
+          if(Array.isArray(incoming)){
+            // basic validation: ensure objects have text
+            const validated = incoming.filter(it => it && typeof it.text === 'string')
+            todos = validated.concat(todos)
+            save(); render()
+          } else {
+            alert('Invalid file format - expected an array of todos')
+          }
+        }catch(err){ alert('Could not parse file') }
+      }
+      reader.readAsText(file)
+    }
+
+    // init
+    function init(){
+      load()
+      render()
+
+      // events
+      el(SELECTORS.form).addEventListener('submit', e => {
+        e.preventDefault()
+        const v = el(SELECTORS.input).value
+        addTodo(v)
+        el(SELECTORS.input).value = ''
+        el(SELECTORS.input).focus()
+      })
+
+      el(SELECTORS.filter).addEventListener('change', render)
+      el(SELECTORS.clearCompleted).addEventListener('click', clearCompleted)
+      el(SELECTORS.export).addEventListener('click', exportTodos)
+
+      el(SELECTORS.importBtn).addEventListener('click', () => el(SELECTORS.importFile).click())
+      el(SELECTORS.importFile).addEventListener('change', e => {
+        const f = e.target.files && e.target.files[0]
+        importTodos(f)
+        e.target.value = ''
+      })
+
+      // keyboard shortcuts
+      window.addEventListener('keydown', e => {
+        if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k'){
+          e.preventDefault(); el(SELECTORS.input).focus()
+        }
+      })
+    }
+
+    init()
+  </script>
+</body>
+</html>
