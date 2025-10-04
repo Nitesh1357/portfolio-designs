@@ -1,0 +1,14 @@
+{
+  "pageTitle": "Triangle Classifier",
+  "title": "What's the Triangle?",
+  "sideA": "Side A:",
+  "sideB": "Side B:",
+  "sideC": "Side C:",
+  "verifyButton": "Verify",
+  "footerText": "Developed by",
+  "invalidInput": "Please enter valid values for all sides.",
+  "notATriangle": "These values do not form a triangle.",
+  "equilateral": "It's an Equilateral Triangle!",
+  "isosceles": "It's an Isosceles Triangle!",
+  "scalene": "It's a Scalene Triangle!"
+}

@@ -1,0 +1,14 @@
+{
+  "pageTitle": "Classificador de Triângulos",
+  "title": "Qual é o Triângulo?",
+  "sideA": "Lado A:",
+  "sideB": "Lado B:",
+  "sideC": "Lado C:",
+  "verifyButton": "Verificar",
+  "footerText": "Desenvolvido por",
+  "invalidInput": "Por favor, insira valores válidos para todos os lados.",
+  "notATriangle": "Esses valores não formam um triângulo.",
+  "equilateral": "É um Triângulo Equilátero!",
+  "isosceles": "É um Triângulo Isósceles!",
+  "scalene": "É um Triângulo Escaleno!"
+}
