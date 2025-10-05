@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Classificador de Triângulos</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="page-header">
+      <nav class="language-switcher">
+        <button id="btn-pt">PT-BR</button>
+        <button id="btn-en">EN</button>
+      </nav>
+    </header>
+
+    <main class="container">
+      <h1 data-key="title">Qual é o Triângulo?</h1>
+
+      <form id="triangle-form">
+        <div class="input-group">
+          <label for="sideA" data-key="sideA">Lado A:</label>
+          <input type="number" id="sideA" placeholder="10" min="1" required />
+
+          <label for="sideB" data-key="sideB">Lado B:</label>
+          <input type="number" id="sideB" placeholder="10" min="1" required />
+
+          <label for="sideC" data-key="sideC">Lado C:</label>
+          <input type="number" id="sideC" placeholder="10" min="1" required />
+        </div>
+
+        <button type="submit" data-key="verifyButton">Verificar</button>
+      </form>
+
+      <section id="result-container" role="status" aria-live="polite">
+        <div id="result-visual"></div>
+        <p id="result-text"></p>
+      </section>
+    </main>
+
+    <footer class="page-footer">
+      <p>
+        <span data-key="footerText">Desenvolvido por</span>
+        <a
+          href="https://github.com/fnetgit"
+          target="_blank"
+          rel="noopener noreferrer"
+          >fnetgit</a
+        >
+      </p>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
